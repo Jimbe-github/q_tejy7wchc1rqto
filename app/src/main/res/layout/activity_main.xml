@@ -6,6 +6,18 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+  <RadioGroup
+      android:id="@+id/ragio"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      app:layout_constraintBottom_toTopOf="@id/listView1"
+      app:layout_constraintLeft_toLeftOf="parent"
+      app:layout_constraintRight_toRightOf="parent"
+      app:layout_constraintTop_toTopOf="parent">
+
+  </RadioGroup>
+
   <ListView
       android:id="@+id/listView1"
       android:layout_width="0dp"
@@ -13,7 +25,7 @@
       app:layout_constraintBottom_toTopOf="@id/listView2"
       app:layout_constraintLeft_toLeftOf="parent"
       app:layout_constraintRight_toRightOf="parent"
-      app:layout_constraintTop_toTopOf="parent" />
+      app:layout_constraintTop_toBottomOf="@id/ragio" />
 
   <ListView
       android:id="@+id/listView2"

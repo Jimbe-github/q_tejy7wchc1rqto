@@ -1,6 +1,7 @@
 package com.teratail.q_tejy7wchc1rqto;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.KeyEventDispatcher;
 
 import android.os.Bundle;
 import android.view.*;
@@ -14,7 +15,6 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-
     //テストデータ
     //List<User> userList = new ArrayList<>();
     //userList.add(new User("titleA","2/10","14:00", "todoA1","todoA2",null,null,null));
@@ -22,15 +22,19 @@ public class MainActivity extends AppCompatActivity {
     //userList.add(new User("titleC","2/25","12:00", "todoC1","todoC2","todoC3","todoC4","todoC5"));
     DBHelper dbHelper = new DBHelper(this);
     dbHelper.deleteAll();
-    dbHelper.insert(new User("DBtitleA","3/10","4:00", "DBtodoA1","DBtodoA2",null,null,null));
-    dbHelper.insert(new User("DBtitleB","3/20","8:00", "DBtodoB1",null,"DBtodoB3",null,null));
-    dbHelper.insert(new User("DBtitleC","2325","10:00", "DBtodoC1","DBtodoC2","DBtodoC3","DBtodoC4","DBtodoC5"));
-    List<User> userList = dbHelper.getAll();
+    long tab1 = dbHelper.insert(new TodoTab(0,"Tab1",1));
+    long tab2 = dbHelper.insert(new TodoTab(0,"Tab2",2));
+    long tab3 = dbHelper.insert(new TodoTab(0,"Tab3",3));
+    dbHelper.insert(new User(0,tab1,"tab1titleA","3/10","4:00", "DBtodoA1","DBtodoA2",null,null,null));
+    dbHelper.insert(new User(0,tab1,"tab1titleB","3/20","8:00", "DBtodoB1",null,"DBtodoB3",null,null));
+    dbHelper.insert(new User(0,tab1,"tab1titleC","3/25","10:00", "DBtodoC1","DBtodoC2","DBtodoC3","DBtodoC4","DBtodoC5"));
+    dbHelper.insert(new User(0,tab2,"tab2titleD","4/11","14:00", "DBtodoD1","DBtodoD2",null,null,null));
+    dbHelper.insert(new User(0,tab3,"tab3titleE","5/2","9:15", "DBtodoE1","DBtodoE2","DBtodoE3",null,null));
 
     ListView listView1 = findViewById(R.id.listView1);
     ListView listView2 = findViewById(R.id.listView2);
 
-    UserAdapter userAdapter = new UserAdapter(userList);
+    UserAdapter userAdapter = new UserAdapter();
     listView1.setAdapter(userAdapter);
 
     TodoAdapter todoAdapter = new TodoAdapter();
@@ -40,6 +44,47 @@ public class MainActivity extends AppCompatActivity {
     listView1.setOnItemClickListener((adapterView, view, position, id) -> {
       todoAdapter.setUser((User)userAdapter.getItem(position));
     });
+
+    setRadioTabs(dbHelper, (compoundButton, isChecked) -> {
+      if(!isChecked) return;
+      //ラジオボタンが選択変更されたら、各アダプタの内容を更新する
+      long tabId = (long)compoundButton.getTag();
+      userAdapter.setUserList(dbHelper.getUsers(tabId));
+      todoAdapter.setUser(null);
+    });
+  }
+
+  private List<RadioButton> radioButtonList = new ArrayList<>(); //一応保存
+
+  private void setRadioTabs(DBHelper dbHelper, CompoundButton.OnCheckedChangeListener listener) {
+    List<TodoTab> tabList = dbHelper.getAllTabs();
+    RadioGroup radioGroup = findViewById(R.id.ragio);
+    for(TodoTab tab : tabList) {
+      RadioButton radioButton = createRadioButton(tab, listener);
+      radioGroup.addView(radioButton);
+      radioButtonList.add(radioButton);
+    }
+    radioGroup.check(radioButtonList.get(0).getId()); //この選択で各リスナも動く
+  }
+
+  private RadioButton createRadioButton(TodoTab tab, CompoundButton.OnCheckedChangeListener listener ) {
+    RadioButton radioButton = new RadioButton(this);
+    radioButton.setId(View.generateViewId());
+    radioButton.setText(tab.title);
+    radioButton.setTag(tab._id);
+    radioButton.setOnCheckedChangeListener(listener);
+    return radioButton;
+  }
+}
+
+class TodoTab {
+  long _id;
+  String title;
+  int order;
+  TodoTab(long _id, String title, int order) {
+    this._id = _id;
+    this.title = title;
+    this.order = order;
   }
 }
 
@@ -52,12 +97,16 @@ class User {
       this.text = text;
     }
   }
+  long _id;
+  final long tabId;
   final String title;
   final String date;
   final String time;
   final List<Todo> todoList = new ArrayList<>();
-  User(String title, String date, String time, String... todos) {
+  User(long _id, long tabId, String title, String date, String time, String... todos) {
     if(todos.length > 5) throw new IllegalArgumentException();
+    this._id = _id;
+    this.tabId = tabId;
     this.title = title;
     this.date = date;
     this.time = time;
@@ -69,8 +118,9 @@ class User {
 class UserAdapter extends BaseAdapter {
   private List<User> userList;
 
-  UserAdapter(List<User> userList) {
+  void setUserList(List<User> userList) {
     this.userList = userList;
+    notifyDataSetChanged(); //ListView に表示内容が替わったことを知らせ、再表示を促す
   }
 
   @Override
